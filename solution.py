@@ -14,7 +14,7 @@ def cross(A, B):
     "Cross product of elements in A and elements in B."
     return [s+t for s in A for t in B]
 
-# Initialize
+# Initialize grid variables
 rows = 'ABCDEFGHI'
 cols = '123456789'
 
@@ -23,10 +23,11 @@ boxes = cross(rows, cols)
 row_units = [cross(r, cols) for r in rows]
 column_units = [cross(rows, c) for c in cols]
 square_units = [cross(rs, cs) for rs in ('ABC','DEF','GHI') for cs in ('123','456','789')]
-diag_units = [ 
-    [list(rows)[i]+list(cols)[i] for i in range(len(rows))], 
-    [list(reversed(rows))[i]+list(cols)[i] for i in range(len(rows))] 
+diag_units = [
+    [x[0]+x[1] for x in zip(list(rows), list(cols))],
+    [x[0]+x[1] for x in zip(list(reversed(rows)), list(cols))]
 ]
+
 unitlist = row_units + column_units + square_units + diag_units
 units = dict((s, [u for u in unitlist if s in u]) for s in boxes)
 peers = dict((s, set(sum(units[s],[]))-set([s])) for s in boxes)
@@ -39,25 +40,26 @@ def naked_twins(values):
     Returns:
         the values dictionary with the naked twins eliminated from peers.
     """
-
-    # Find all instances of naked twins
     for unit in unitlist:
-        values_to_boxes = dict()
-        naked_value = []
+        values_seen = dict()
+        naked_values = []
         naked_boxes = []
+        
+        # Find all instances of naked twins in the unit
         for box in unit:
-            if values[box] in values_to_boxes and len(values[box]) == 2:
-                naked_value += values[box]
+            if values[box] in values_seen and len(values[box]) == 2:
+                naked_values += values[box]
                 naked_boxes.append(box)
-                naked_boxes.append(values_to_boxes[values[box]])
+                naked_boxes.append(values_seen[values[box]])
             else:
-                values_to_boxes[values[box]] = box
+                values_seen[values[box]] = box
                 
+        # Eliminate all other instances of the naked twin values
         for box in unit:
             if box in naked_boxes:
                 continue
          
-            for value in naked_value:
+            for value in naked_values:
                 for digit in list(value):
                     assign_value(values, box, values[box].replace(digit, ''))
     return values
@@ -140,7 +142,7 @@ def search(values):
     # Choose one of the unfilled squares with the fewest possibilities
     _,s = min((len(values[box]), box) for box in boxes if len(values[box]) > 1)
 
-    # Now use recursion to solve each one of the resulting sudokus, and if one returns a value (not False), return that answer!
+    # Recurse to solve each one of the resulting sudokus
     for value in values[s]:
         new_sudoku = values.copy()
         assign_value(new_sudoku, s, value)
